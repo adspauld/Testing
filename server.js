@@ -7,7 +7,7 @@ var hostname = process.env.HOSTNAME || 'localhost';
 var port = 1234;
 
 app.get("/", function (req, res) {
-    res.redirect("index.html")
+    res.redirect("Resume.html")
 });
 
 app.use(methodOverride());
