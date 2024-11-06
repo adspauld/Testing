@@ -11,3 +11,5 @@ Assignment 2 is unknown
  # Test
  This is a test message
  changes to file
+sudo service mongod status
+ sudo service mongod start
