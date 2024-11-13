@@ -75,6 +75,9 @@ function start(){
 
 
 	setInterval("getDataFromServer()", 1000);
+	document.getElementById("duration").addEventListener("change", function() {
+		getDataFromServer(); 
+	});
 }
 
 
