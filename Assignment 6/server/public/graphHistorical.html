@@ -34,18 +34,25 @@ function getDataFromServer()
 }
 
 function updateGraph() {
-		var duration = parseInt(document.getElementById('duration').value); 
-		var currentTime = new Date().getTime();
-		var filteredData = historicalData.filter(function (entry) {
-			return currentTime - entry.time <= duration * 60 * 1000;
-		});
+	var duration = parseInt(document.getElementById('duration').value); 
+	var currentTime = new Date().getTime();
+	var filteredData = historicalData.filter(function (entry) {
+		return currentTime - entry.time <= duration * 60 * 1000;
+	});
 
-		var columns = [["x"], ["Temperature"], ["Humidity"]];
-		for (var i = 0; i < filteredData.length; i++) {
-			columns[0].push(getTSInFormat(filteredData[i].time));
-			columns[1].push(filteredData[i].temperature);
-			columns[2].push(filteredData[i].humidity);
-		}
+	var columns = [["x"], ["Temperature"], ["Humidity"]];
+	for (var i = 0; i < filteredData.length; i++) {
+		columns[0].push(getTSInFormat(filteredData[i].time));
+		columns[1].push(filteredData[i].temperature);
+		columns[2].push(filteredData[i].humidity);
+	}
+	console.log("Updating graph with columns:", columns);
+
+	chart.load({
+		columns: columns,
+		unload: true
+	});
+}
 function getTSInFormat(t)
 {
 	var x = new Date(t);
