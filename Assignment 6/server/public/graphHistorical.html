@@ -12,9 +12,12 @@
 	var historicalData = [];  // To store all data received over time
 	
 	function getDataFromServer() {
-		var url = "./getLatest";
+		var url = "./getLatest";  // Simulate this with real API or sample data for now
 		var callback = function(data) {
 			var obj = JSON.parse(data);
+
+			console.log("Data fetched:", obj); // Log the data to make sure it's fetching correctly
+
 			for (var i = 0; i < obj.length; i++) {
 				var timestamp = parseInt(obj[i].time);
 				if (timestamp > lastAddedTS) {
@@ -38,7 +41,7 @@
 
 	// Function to update the chart based on the selected time range
 	function updateGraph() {
-		var duration = parseInt(document.getElementById('duration').value);
+		var duration = parseInt(document.getElementById('duration').value);  // Get selected duration (in minutes)
 		var currentTime = new Date().getTime();
 		var filteredData = historicalData.filter(function (entry) {
 			return currentTime - entry.time <= duration * 60 * 1000;  // Filter based on duration in minutes
@@ -51,21 +54,24 @@
 			columns[2].push(filteredData[i].humidity);
 		}
 
+		console.log("Updating graph with columns:", columns);  // Log the data that is being loaded into the graph
+
 		chart.load({
-			columns: columns
+			columns: columns,
+			unload: true  // This will clear the previous data and update it with the new one
 		});
 	}
 
 	function start() {
 		flatpickr("#datetimeSelect", { enableTime: true, dateFormat: "Y-m-d H:i" });
 
-		// Initial graph setup
+		// Initial graph setup with empty data (to avoid rendering issues)
 		chart = c3.generate({
 			bindto: '#data',
 			data: {
 				x: 'x',
 				xFormat: '%Y-%m-%dT%H:%M:%S',
-				columns: columns
+				columns: [["x"], ["Temperature"], ["Humidity"]]
 			},
 			axis: {
 				x: {
@@ -77,7 +83,7 @@
 			}
 		});
 
-		setInterval("getDataFromServer()", 1000);  // Fetch data every second
+		setInterval(getDataFromServer, 1000);  // Fetch data every second
 
 		// Add event listener to update the graph when the time range is changed
 		document.getElementById('duration').addEventListener('change', updateGraph);
@@ -99,4 +105,3 @@
 
 </body>
 </html>
-
