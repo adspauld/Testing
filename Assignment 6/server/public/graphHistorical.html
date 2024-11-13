@@ -37,8 +37,9 @@ function getDataFromServer()
 function updateGraph() {
 	var duration = parseInt(document.getElementById('duration').value); 
 	var currentTime = new Date().getTime();
+
 	var filteredData = historicalData.filter(function (entry) {
-		return currentTime - entry.time <= duration * 60 * 1000;
+		return currentTime - entry.time <= duration * 60 * 1000; 
 	});
 
 	var columns = [["x"], ["Temperature"], ["Humidity"]];
@@ -51,7 +52,7 @@ function updateGraph() {
 
 	chart.load({
 		columns: columns,
-		unload: false
+		unload: false 
 	});
 }
 function getTSInFormat(t)
