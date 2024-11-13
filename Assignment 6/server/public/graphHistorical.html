@@ -5,107 +5,105 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.8/c3.min.js"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src='asyncReq.js'></script>
+	<script>
+	var chart;
+	var lastAddedTS = 0;
+	var historicalData = [];  // To store all data received over time
+	
+	function getDataFromServer() {
+		var url = "./getLatest";  // Simulate this with real API or sample data for now
+		var callback = function(data) {
+			var obj = JSON.parse(data);
+			console.log("Data fetched:", obj);
 
-<script src='asyncReq.js'></script>
-<script>
-var chart;
-var lastAddedTS = 0;
-var historicalData = [];
-function getDataFromServer()
-{
-	var url = "./getLatest"
-	var callback = function(data){
-		var obj = JSON.parse(data);
-		var columns = [["x"],["Temperature"],["Humidity"]]
-		for(var i = 0; i < obj.length; i++){
-			var timestamp = parseInt(obj[i].time);
-			if(timestamp > lastAddedTS){
-				columns[0].push(getTSInFormat(timestamp));
-				columns[1].push(obj[i].t || 0);
-				columns[2].push(obj[i].h || 0);
-			};
-				historicalData.push(time: timestamp,
-					temperature: obj[i].t || 0,
-					humidity: obj[i].h || 0);
-				lastAddedTS = timestamp;
+			var newColumns = [["x"], ["Temperature"], ["Humidity"]];
+			for (var i = 0; i < obj.length; i++) {
+				var timestamp = parseInt(obj[i].time);
+				if (timestamp > lastAddedTS) {
+					historicalData.push({
+						time: timestamp,
+						temperature: obj[i].t || 0,
+						humidity: obj[i].h || 0
+					});
+					newColumns[0].push(getTSInFormat(timestamp));
+					newColumns[1].push(obj[i].t || 0);
+					newColumns[2].push(obj[i].h || 0);
+					lastAddedTS = timestamp;
+				}
+			}
+
+			// Only flow new data (smooth update)
+			if (newColumns[0].length > 1) {  // Ensure there is new data to flow
+				chart.flow({
+					columns: newColumns,
+					length: 0  // Let the data keep flowing without removing previous points
+				});
+			}
+		};
+		loadFile(url, callback);
+	}
+
+	function getTSInFormat(t) {
+		var x = new Date(t);
+		return x.getFullYear() + "-" + (x.getMonth() + 1) + "-" + x.getDate() + "T" + x.getHours() + ":" + x.getMinutes() + ":" + x.getSeconds();
+	}
+
+	// Function to update the chart based on the selected time range
+	function updateGraph() {
+		var duration = parseInt(document.getElementById('duration').value);  // Get selected duration (in minutes)
+		var currentTime = new Date().getTime();
+		var filteredData = historicalData.filter(function (entry) {
+			return currentTime - entry.time <= duration * 60 * 1000;  // Filter based on duration in minutes
+		});
+
+		var columns = [["x"], ["Temperature"], ["Humidity"]];
+		for (var i = 0; i < filteredData.length; i++) {
+			columns[0].push(getTSInFormat(filteredData[i].time));
+			columns[1].push(filteredData[i].temperature);
+			columns[2].push(filteredData[i].humidity);
 		}
 
-		chart.flow({
-  		columns: columns
+		console.log("Updating graph with columns:", columns);
+
+		// Load new data when user changes duration (full load)
+		chart.load({
+			columns: columns,
+			unload: true  // This will clear the previous data and update it with the new one
 		});
 	}
-	loadFile(url, callback);
-}
 
-function updateGraph() {
-	var duration = parseInt(document.getElementById('duration').value); 
-	var currentTime = new Date().getTime();
+	function start() {
+		flatpickr("#datetimeSelect", { enableTime: true, dateFormat: "Y-m-d H:i" });
 
-	var filteredData = historicalData.filter(function (entry) {
-		return currentTime - entry.time <= duration * 60 * 1000; 
-	});
-
-	var columns = [["x"], ["Temperature"], ["Humidity"]];
-	for (var i = 0; i < filteredData.length; i++) {
-		columns[0].push(getTSInFormat(filteredData[i].time));
-		columns[1].push(filteredData[i].temperature);
-		columns[2].push(filteredData[i].humidity);
-	}
-	console.log("Updating graph with columns:", columns);
-
-	chart.load({
-		columns: columns,
-		unload: false 
-	});
-}
-function getTSInFormat(t)
-{
-	var x = new Date(t);
-	return x.getFullYear() + "-" + (x.getMonth()+1) + "-" + x.getDate() + "T" + x.getHours() + ":" + x.getMinutes() + ":" + x.getSeconds();
-}
-function start(){
-	flatpickr("#datetimeSelect", { enableTime: true,
-    dateFormat: "Y-m-d H:i"});
-
-	var url = "./getLatest";
-	var callback = function(data){
-		var obj = JSON.parse(data);
-		var columns = [["x"],["Temperature"],["Humidity"]]
-		for(var i = 0; i < obj.length; i++){
-			var timestamp = parseInt(obj[i].time);
-			columns[0].push(getTSInFormat(timestamp));
-			columns[1].push(obj[i].t || 0);
-			columns[2].push(obj[i].h || 0);
-			lastAddedTS = timestamp;
-		}
+		// Initial graph setup with empty data (to avoid rendering issues)
 		chart = c3.generate({
-    	bindto: '#data',
-    	data: {
+			bindto: '#data',
+			data: {
 				x: 'x',
 				xFormat: '%Y-%m-%dT%H:%M:%S',
-      	columns: columns
-    	},
+				columns: [["x"], ["Temperature"], ["Humidity"]]
+			},
 			axis: {
-        x: {
-            type: 'timeseries',
-            tick: {
-                format: '%H:%M:%S,%Y-%m-%d',
-            }
-        }
-    	}
+				x: {
+					type: 'timeseries',
+					tick: {
+						format: '%H:%M:%S, %Y-%m-%d',
+					}
+				}
+			},
+			transition: {
+				duration: 500  // Smooth transition
+			}
 		});
 
+		setInterval(getDataFromServer, 5000);  // Fetch data every 5 seconds
 
+		// Add event listener to update the graph when the time range is changed
+		document.getElementById('duration').addEventListener('change', updateGraph);
 	}
-	loadFile(url, callback);
 
-
-	setInterval("getDataFromServer()", 1000);
-	document.getElementById('duration').addEventListener('change', updateGraph);
-}
-
-
-</script>
+	</script>
 </head>
 
 <body style='text-align:center; font-family:Helvetica' onload='start()'>
