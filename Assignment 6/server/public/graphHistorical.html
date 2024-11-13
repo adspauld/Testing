@@ -9,10 +9,10 @@
 	<script>
 	var chart;
 	var lastAddedTS = 0;
-	var historicalData = [];  // To store all data received over time
+	var historicalData = []; 
 	
 	function getDataFromServer() {
-		var url = "./getLatest";  // Simulate this with real API or sample data for now
+		var url = "./getLatest";  
 		var callback = function(data) {
 			var obj = JSON.parse(data);
 			console.log("Data fetched:", obj);
@@ -33,11 +33,11 @@
 				}
 			}
 
-			// Only flow new data (smooth update)
-			if (newColumns[0].length > 1) {  // Ensure there is new data to flow
+			
+			if (newColumns[0].length > 1) { 
 				chart.flow({
 					columns: newColumns,
-					length: 0  // Let the data keep flowing without removing previous points
+					length: 0 
 				});
 			}
 		};
@@ -49,12 +49,12 @@
 		return x.getFullYear() + "-" + (x.getMonth() + 1) + "-" + x.getDate() + "T" + x.getHours() + ":" + x.getMinutes() + ":" + x.getSeconds();
 	}
 
-	// Function to update the chart based on the selected time range
+	
 	function updateGraph() {
-		var duration = parseInt(document.getElementById('duration').value);  // Get selected duration (in minutes)
+		var duration = parseInt(document.getElementById('duration').value);
 		var currentTime = new Date().getTime();
 		var filteredData = historicalData.filter(function (entry) {
-			return currentTime - entry.time <= duration * 60 * 1000;  // Filter based on duration in minutes
+			return currentTime - entry.time <= duration * 60 * 1000; 
 		});
 
 		var columns = [["x"], ["Temperature"], ["Humidity"]];
@@ -64,19 +64,18 @@
 			columns[2].push(filteredData[i].humidity);
 		}
 
-		console.log("Updating graph with columns:", columns);
+		console.log("Updating graph", columns);
 
-		// Load new data when user changes duration (full load)
+		
 		chart.load({
 			columns: columns,
-			unload: true  // This will clear the previous data and update it with the new one
+			unload: true  
 		});
 	}
 
 	function start() {
 		flatpickr("#datetimeSelect", { enableTime: true, dateFormat: "Y-m-d H:i" });
 
-		// Initial graph setup with empty data (to avoid rendering issues)
 		chart = c3.generate({
 			bindto: '#data',
 			data: {
@@ -99,7 +98,6 @@
 
 		setInterval(getDataFromServer, 5000);  // Fetch data every 5 seconds
 
-		// Add event listener to update the graph when the time range is changed
 		document.getElementById('duration').addEventListener('change', updateGraph);
 	}
 
