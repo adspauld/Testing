@@ -15,9 +15,9 @@
 		var url = "./getLatest";  // Simulate this with real API or sample data for now
 		var callback = function(data) {
 			var obj = JSON.parse(data);
+			console.log("Data fetched:", obj);
 
-			console.log("Data fetched:", obj); // Log the data to make sure it's fetching correctly
-
+			var newColumns = [["x"], ["Temperature"], ["Humidity"]];
 			for (var i = 0; i < obj.length; i++) {
 				var timestamp = parseInt(obj[i].time);
 				if (timestamp > lastAddedTS) {
@@ -26,10 +26,20 @@
 						temperature: obj[i].t || 0,
 						humidity: obj[i].h || 0
 					});
+					newColumns[0].push(getTSInFormat(timestamp));
+					newColumns[1].push(obj[i].t || 0);
+					newColumns[2].push(obj[i].h || 0);
 					lastAddedTS = timestamp;
 				}
 			}
-			updateGraph();  // Update the graph with new data
+
+			// Only flow new data (smooth update)
+			if (newColumns[0].length > 1) {  // Ensure there is new data to flow
+				chart.flow({
+					columns: newColumns,
+					length: 0  // Let the data keep flowing without removing previous points
+				});
+			}
 		};
 		loadFile(url, callback);
 	}
@@ -54,8 +64,9 @@
 			columns[2].push(filteredData[i].humidity);
 		}
 
-		console.log("Updating graph with columns:", columns);  // Log the data that is being loaded into the graph
+		console.log("Updating graph with columns:", columns);
 
+		// Load new data when user changes duration (full load)
 		chart.load({
 			columns: columns,
 			unload: true  // This will clear the previous data and update it with the new one
@@ -80,10 +91,13 @@
 						format: '%H:%M:%S, %Y-%m-%d',
 					}
 				}
+			},
+			transition: {
+				duration: 500  // Smooth transition
 			}
 		});
 
-		setInterval(getDataFromServer, 1000);  // Fetch data every second
+		setInterval(getDataFromServer, 5000);  // Fetch data every 5 seconds
 
 		// Add event listener to update the graph when the time range is changed
 		document.getElementById('duration').addEventListener('change', updateGraph);
