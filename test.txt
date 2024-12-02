@@ -1,0 +1,71 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+// Replace with your network credentials
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+// Server URL
+const char* serverName = "http://192.168.0.195/setValue";
+
+// Analog pin assignments
+const int analogPin1 = 34;  // Example: GPIO34 (ADC1 channel 6)
+const int analogPin2 = 35;  // Example: GPIO35 (ADC1 channel 7)
+
+void setup() {
+  // Start serial communication
+  Serial.begin(115200);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi...");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+  }
+  
+  Serial.println("\nWiFi connected.");
+  Serial.println(WiFi.localIP());  // Print ESP32 IP address
+}
+
+void loop() {
+  // Read analog values (assuming 12-bit ADC resolution)
+  int analogValue1 = analogRead(analogPin1);
+  int analogValue2 = analogRead(analogPin2);
+
+  // Convert to voltage (assuming 3.3V reference voltage)
+  float voltage1 = (analogValue1 / 4095.0) * 3.3;
+  float voltage2 = (analogValue2 / 4095.0) * 3.3;
+
+  // Print values to serial monitor
+  Serial.print("Voltage 1: ");
+  Serial.println(voltage1);
+  Serial.print("Voltage 2: ");
+  Serial.println(voltage2);
+
+  // Send the values to the server
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+
+    // Create a URL with the parameters
+    String serverPath = serverName;
+    serverPath += "?voltage1=" + String(voltage1) + "&voltage2=" + String(voltage2);
+    
+    http.begin(serverPath.c_str());
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println("Server response: " + response);
+    } else {
+      Serial.println("Error on sending GET: " + String(httpResponseCode));
+    }
+
+    http.end();  // Free resources
+  } else {
+    Serial.println("WiFi not connected");
+  }
+
+  delay(5000);  // Send data every 5 seconds
+}
